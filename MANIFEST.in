@@ -1,1 +1,3 @@
 include README.rst
+include setup.py
+exclude pavement.py
