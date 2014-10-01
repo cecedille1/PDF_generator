@@ -7,11 +7,12 @@ from collections import deque
 
 from reportlab.platypus import Image, Table
 from reportlab.lib import enums
-from pdf_generator import make_para
+
+from pdf_generator.styles import make_para
 
 
-def html_to_rlab(text):
-    parser = Parser()
+def html_to_rlab(text, image_locator):
+    parser = Parser(image_locator)
     parser.feed(text)
     return parser.get_result()
 
@@ -38,8 +39,8 @@ class Parser(HTMLParser):
             height = int(attrs['height']) / 10
 
         self.new_para()
-        self.stack[-1].append(Image('/home/musibox' + attr['src'],
-                                    height=height, width=width))
+        self.stack[-1].append(
+            Image(self.image_locator(attr['src']), height=height, width=width))
 
     @end_block
     def block_end(item):
@@ -93,8 +94,9 @@ class Parser(HTMLParser):
         'img': on_img,
     }
 
-    def __init__(self):
+    def __init__(self, image_locator):
         HTMLParser.__init__(self)
+        self.image_locator = image_locator
         self.new_buffer()
         self.stack = deque()
         self.stack.append([])
@@ -122,7 +124,7 @@ class Parser(HTMLParser):
 
     def new_para(self):
         p = self.clean_buffer()
-        if not p is None:
+        if p is not None:
             self.stack[-1].append(p)
 
     def add_buffer(self, text):
@@ -146,5 +148,4 @@ class Parser(HTMLParser):
         self.new_para()
         if len(self.stack) == 1:
             return self.stack.pop()
-        else:
-            return Table(self.stack)
+        return Table(self.stack)
