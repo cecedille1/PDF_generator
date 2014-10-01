@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+__version__ = '0.1.1'
+
 from reportlab.platypus import Paragraph, Spacer, Table, SimpleDocTemplate, Image, PageBreak, LongTable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import units, colors, enums, pagesizes
