@@ -10,10 +10,12 @@ from collections import deque
 from reportlab.platypus import Image, Table
 from reportlab.lib import enums
 
+from pdf_generator.images import NoImageLocator
 from pdf_generator.styles import make_para
 
 
-def html_to_rlab(text, image_locator):
+def html_to_rlab(text, image_locator=None):
+    image_locator = image_locator or NoImageLocator()
     parser = Parser(image_locator)
     parser.feed(text)
     return parser.get_result()

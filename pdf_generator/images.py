@@ -16,4 +16,4 @@ class ImagePathLocator(object):
 
 class NoImageLocator(object):
     def __call__(self, path):
-        raise RuntimeError()
+        raise RuntimeError('No media path')
