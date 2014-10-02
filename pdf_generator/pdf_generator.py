@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
 
 from reportlab.platypus import Paragraph, Spacer, Table, SimpleDocTemplate, Image, PageBreak
 from reportlab.lib import units, enums, pagesizes

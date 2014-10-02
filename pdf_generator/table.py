@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
+
 from reportlab.platypus import Table, LongTable
 
 from pdf_generator.styles import make_para_row, make_para_array
