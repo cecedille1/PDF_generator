@@ -10,12 +10,12 @@ from collections import deque
 from reportlab.platypus import Image, Table
 from reportlab.lib import enums
 
-from pdf_generator.images import NoImageLocator
-from pdf_generator.styles import make_para
+from pdf_generator.images import NoMediasLocator
+from pdf_generator.styles import Paragraph
 
 
 def html_to_rlab(text, image_locator=None):
-    image_locator = image_locator or NoImageLocator()
+    image_locator = image_locator or NoMediasLocator()
     parser = Parser(image_locator)
     parser.feed(text)
     return parser.get_result()
@@ -140,7 +140,7 @@ class Parser(HTMLParser):
             text = self.buff.getvalue()
             self.buff.close()
             self.new_buffer()
-            return make_para(text)
+            return Paragraph(text)
         return None
 
     def new_buffer(self):

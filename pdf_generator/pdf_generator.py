@@ -3,42 +3,50 @@
 
 from __future__ import absolute_import
 
-from reportlab.platypus import Paragraph, Spacer, Table, SimpleDocTemplate, Image, PageBreak
-from reportlab.lib import units, enums, pagesizes
+import collections
 
-from pdf_generator.styles import styles, make_para
+from reportlab.platypus import (
+    PageBreak,
+    FrameBreak,
+    NextPageTemplate,
+)
 
 
-class PDFGenerator(list):
+class Story(collections.MutableSequence):
+    def __init__(self, template):
+        self._template = template
+        self._story = list()
+        self._index = 0
 
-    def add_normal_paragraph(self, para):
-        self.append(make_para(para))
+    def next_page(self):
+        self._story.append(PageBreak())
 
-    def add_centered_paragraph(self, para):
-        self.append(Paragraph(para, styles['centered']))
+    def next_frame(self):
+        self._story.append(FrameBreak())
 
-    def add_right_paragraph(self, para):
-        self.append(Paragraph(para, styles['right']))
+    def next_template(self):
+        self._index += 1
+        self._story.append(NextPageTemplate(self._index))
 
-    def add_horiz_spacer(self, size):
-        self.append(Spacer(0, size * units.mm))
+    def __len__(self):
+        return len(self._story)
 
-    def add_boxed_paragraph(self, para, size):
-        self.append(Table([[Paragraph(para, styles['boxed'])]],
-                          colWidths=(size * units.mm,),
-                          hAlign=enums.TA_RIGHT))
+    def __iter__(self):
+        return iter(self._story)
 
-    def build(self, filename, title=''):
-        doc = SimpleDocTemplate(filename, pagesize=pagesizes.A4,
-                                rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=18,
-                                author='MusiboxLive', title=title)
-        doc.build(self)
+    def __getitem__(self, index):
+        return self._story[index]
 
-    def add_picture(self, filename, width=None, height=None):
-        self.append(Image(filename, height=height, width=width))
+    def insert(self, index, value):
+        return self._story.insert(index, value)
 
-    def add_title(self, n, content):
-        self.append(Paragraph(content, styles['h%i' % n]))
+    def __setitem__(self, index, value):
+        self._story[index] = value
 
-    def new_page(self):
-        self.append(PageBreak())
+    def __delitem__(self, index):
+        del self._story[index]
+
+    def build(self, out, title, author, **kw):
+        doc = self._template(out, title, author)
+        doc.build(self._story, **kw)
+        return out
