@@ -5,6 +5,7 @@ from __future__ import absolute_import
 
 from reportlab.platypus import (
     Paragraph as BaseParagraph,
+    Image as BaseImage,
     Spacer,
 )
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -25,3 +26,12 @@ def Paragraph(text, style=snormal, **kw):
 
 def HSpacer(width):
     return Spacer(0, width)
+
+
+def Image(path, width=None, height=None, ratio=None):
+    if width and ratio:
+        height = width / ratio
+    elif height and ratio:
+        width = height * ratio
+
+    return BaseImage(path, width, height)
