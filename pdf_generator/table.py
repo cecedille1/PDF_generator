@@ -5,12 +5,14 @@ from __future__ import absolute_import
 
 import collections
 
-from reportlab.platypus import Table, LongTable, TableStyle
-from pdf_generator.styles import Paragraph
+from reportlab.platypus import Table, LongTable, TableStyle, Paragraph as ParagraphClass
 
 
 def make_para_row(texts):
-    return map(Paragraph, texts)
+    for text in texts:
+        if not isinstance(text, (ParagraphClass, basestring)):
+            text = unicode(text)
+        yield text
 
 
 def make_para_array(rows):
