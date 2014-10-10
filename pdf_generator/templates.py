@@ -218,6 +218,9 @@ class Template(BaseTemplate):
         self.page_templates.append(pt)
         return pt
 
+    def add_whole_page(self, id=None):
+        self.add_page(id, [(0, 0)])
+
     def __call__(self, out, title, author, debug=False):
         return BaseDocTemplate(
             out,
