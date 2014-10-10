@@ -7,13 +7,17 @@ from reportlab.platypus import (
     Paragraph as BaseParagraph,
     Spacer,
 )
-from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 
 
+styles = getSampleStyleSheet()
 snormal = ParagraphStyle('normal')
 
 
 def Paragraph(text, style=snormal, **kw):
+    if isinstance(style, basestring):
+        style = styles[style]
+
     if kw:
         style = ParagraphStyle('style', parent=style, **kw)
     return BaseParagraph(text, style)
