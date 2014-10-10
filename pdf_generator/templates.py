@@ -36,21 +36,31 @@ class Fraction(object):
 class BaseTemplate(object):
     def __init__(self, pagesize=None, margins=None):
         self.width, self.height = pagesize or pagesizes.A4
-        margins = margins or (36, 18, 36)
+        margins = margins or (36, 36, 18)
+        self._mtop, self._mright, self._mbottom, self._mleft = self.explode(margins)
+
+    def explode(self, margins):
+        """
+        Explode a value or a tuple in 4 values as CSS borders, paddings and
+        margins
+        """
+        if not isinstance(margins, (tuple, list)):
+            margins = [margins]
 
         if len(margins) == 1:
-            self._mleft = self._mright = self._mtop = self._mbottom = margins[0]
+            mleft = mright = mtop = mbottom = margins[0]
         elif len(margins) == 2:
-            self._mbottom, self._mright = margins
-            self._mleft = self._mright
-            self._mtop = self._mbottom
+            mbottom, mright = margins
+            mleft = mright
+            mtop = mbottom
         elif len(margins) == 3:
-            self._mtop, self._mbottom, self._mright = margins
-            self._mleft = self._mright
+            mtop, mright, mbottom = margins
+            mleft = mright
         elif len(margins) == 4:
-            self._mleft, self._mright, self._mtop, self._mbottom = margins[0]
+            mtop, mright, mbottom, mleft = margins[0]
         else:
             raise ValueError('Bad values for margins')
+        return mtop, mright, mbottom, mleft
 
     @property
     def printable_width(self):
