@@ -28,9 +28,10 @@ class Story(collections.MutableSequence):
     def next_frame(self):
         self._story.append(FrameBreak())
 
-    def next_template(self):
-        self._index += 1
-        self._story.append(NextPageTemplate(self._index))
+    def next_template(self, name=None):
+        if name is None:
+            name = self._index = (self._index + 1) % len(self._template.page_templates)
+        self._story.append(NextPageTemplate(name))
 
     def __len__(self):
         return len(self._story)
