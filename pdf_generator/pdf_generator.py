@@ -18,6 +18,10 @@ class Story(collections.MutableSequence):
         self._story = list()
         self._index = 0
 
+    @property
+    def template(self):
+        return self._template
+
     def next_page(self):
         self._story.append(PageBreak())
 
