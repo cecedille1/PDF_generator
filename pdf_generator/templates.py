@@ -204,7 +204,12 @@ class Template(BaseTemplate):
 
         return Frame(x, y, width, height)
 
-    def add_page(self, id, frame_defs):
+    def add_page(self, id, frame_defs=None):
+        if frame_defs is None:
+            frame_defs, id = id, None
+
+        id = id or '_page-{0}'.format(len(self.page_templates))
+
         frames = [self.get_frame(*frame_def) for frame_def in frame_defs]
         pt = PageTemplate(id, frames)
         if self.pageEnd is not None:
