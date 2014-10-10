@@ -190,7 +190,7 @@ class Template(BaseTemplate):
 
         raise ValueError()
 
-    def get_frame(self, x, y, width=None, height=None):
+    def get_frame(self, x, y, width=None, height=None, padding=None):
         # Invert the coordinates, from bottom left to top left
 
         width = self._resolve_dim(width, self.width)
@@ -212,15 +212,21 @@ class Template(BaseTemplate):
         if y + height > self.top:
             height = self.top - y
 
-        return Frame(x, y, width, height)
+        ptop, pright, pbottom, pleft = self.explode(padding if padding is not None else 6)
+        return Frame(x, y, width, height,
+                     leftPadding=pleft,
+                     topPadding=ptop,
+                     bottomPadding=pbottom,
+                     rightPadding=pright,
+                     )
 
-    def add_page(self, id, frame_defs=None):
+    def add_page(self, id, frame_defs=None, padding=None):
         if frame_defs is None:
             frame_defs, id = id, None
 
         id = id or '_page-{0}'.format(len(self.page_templates))
 
-        frames = [self.get_frame(*frame_def) for frame_def in frame_defs]
+        frames = [self.get_frame(*frame_def, padding=padding) for frame_def in frame_defs]
         pt = PageTemplate(id, frames)
         if self.pageEnd is not None:
             pt.onPageEnd = self.pageEnd
@@ -228,8 +234,8 @@ class Template(BaseTemplate):
         self.page_templates.append(pt)
         return pt
 
-    def add_whole_page(self, id=None):
-        self.add_page(id, [(0, 0)])
+    def add_whole_page(self, id=None, padding=None):
+        self.add_page(id, [(0, 0)], padding)
 
     def __call__(self, out, title, author, debug=False):
         return BaseDocTemplate(
