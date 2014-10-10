@@ -5,6 +5,7 @@ from __future__ import absolute_import
 
 from reportlab.platypus import (
     Paragraph as BaseParagraph,
+    Spacer,
 )
 from reportlab.lib.styles import ParagraphStyle
 
@@ -16,3 +17,7 @@ def Paragraph(text, style=snormal, **kw):
     if kw:
         style = ParagraphStyle('style', **kw)
     return BaseParagraph(text, style)
+
+
+def HSpacer(width):
+    return Spacer(0, width)
