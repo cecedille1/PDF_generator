@@ -11,6 +11,7 @@ class PathMediasLocator(object):
         self.base = base
 
     def __call__(self, path):
+        path = path.lstrip('/')
         return os.path.join(self.base, path)
 
 
