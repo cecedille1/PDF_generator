@@ -15,7 +15,7 @@ snormal = ParagraphStyle('normal')
 
 def Paragraph(text, style=snormal, **kw):
     if kw:
-        style = ParagraphStyle('style', **kw)
+        style = ParagraphStyle('style', parent=style, **kw)
     return BaseParagraph(text, style)
 
 
