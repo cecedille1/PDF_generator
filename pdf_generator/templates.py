@@ -96,6 +96,10 @@ class TemplateRows(object):
         self._rows = []
         self._current_height = 0
 
+    def skip(self, height):
+        self._current_height = height + self._current_height
+        return self
+
     def row(self, height=None):
         if self._current_height is None:
             raise ValueError('No space remaining')
