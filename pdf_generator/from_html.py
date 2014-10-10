@@ -10,7 +10,7 @@ from collections import deque
 from reportlab.platypus import Image, Table
 from reportlab.lib import enums
 
-from pdf_generator.images import NoMediasLocator
+from pdf_generator.medias import NoMediasLocator
 from pdf_generator.styles import Paragraph
 
 
