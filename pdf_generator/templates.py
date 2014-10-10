@@ -38,6 +38,14 @@ class BaseTemplate(object):
             raise ValueError('Bad values for margins')
 
     @property
+    def printable_width(self):
+        return self.width - self._mleft - self._mright
+
+    @property
+    def printable_height(self):
+        return self.height - self._mtop - self._mbottom
+
+    @property
     def pagesize(self):
         return (self.width, self.height)
 
