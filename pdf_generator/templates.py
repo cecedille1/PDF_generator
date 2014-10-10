@@ -54,7 +54,7 @@ class BaseTemplate(object):
 
 
 class SimpleTemplate(BaseTemplate):
-    def __call__(self, out, title, author):
+    def __call__(self, out, title, author, debug=False):
         return SimpleDocTemplate(out, pagesize=self.pagesize,
                                  rightMargin=self._mright,
                                  leftMargin=self._mleft,
@@ -62,6 +62,7 @@ class SimpleTemplate(BaseTemplate):
                                  bottomMargin=self._mbottom,
                                  author=author,
                                  title=title,
+                                 showBoundary=debug,
                                  )
 
 
@@ -119,7 +120,7 @@ class Template(BaseTemplate):
         self.page_templates.append(pt)
         return pt
 
-    def __call__(self, out, title, author):
+    def __call__(self, out, title, author, debug=False):
         return BaseDocTemplate(
             out,
             pagesize=self.pagesize,
@@ -130,5 +131,5 @@ class Template(BaseTemplate):
             leftMargin=self._mleft,
             topMargin=self._mtop,
             bottomMargin=self._mbottom,
-            # showBoundary=1
+            showBoundary=debug,
         )

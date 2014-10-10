@@ -46,7 +46,7 @@ class Story(collections.MutableSequence):
     def __delitem__(self, index):
         del self._story[index]
 
-    def build(self, out, title, author, **kw):
-        doc = self._template(out, title, author)
+    def build(self, out, title, author, debug=False, **kw):
+        doc = self._template(out, title, author, debug)
         doc.build(self._story, **kw)
         return out
