@@ -196,12 +196,11 @@ class Template(BaseTemplate):
 
     def get_frame(self, x, y, width=None, height=None, padding=None):
         # Invert the coordinates, from bottom left to top left
+        width = self._resolve_dim(width, self.printable_width)
+        height = self._resolve_dim(height, self.printable_height)
 
-        width = self._resolve_dim(width, self.width)
-        height = self._resolve_dim(height, self.height)
-
-        x = self._resolve_dim(x, self.width)
-        y = self.height - self._resolve_dim(y, self.height) - height
+        x = self._resolve_dim(x, self.printable_width) + self._mleft
+        y = self.height - self._resolve_dim(y, self.printable_height) - height - self._mtop
 
         if x < self.left:
             width -= self.left - x
