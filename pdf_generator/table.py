@@ -5,6 +5,7 @@ from __future__ import absolute_import
 
 import collections
 
+from reportlab.lib import colors
 from reportlab.platypus import Table, LongTable, TableStyle, Paragraph as ParagraphClass
 
 
@@ -97,6 +98,7 @@ class CellsStyle(object):
 
 
 styles = Styles()
+
 styles.all = Styles((0, 0), (-1, -1))
 
 styles.first_row = Styles((0, 0), (-1, 0))
@@ -110,3 +112,5 @@ styles.first_cols = lambda x: Styles((0, 0), (x, -1))
 
 styles.last_col = Styles((-1, 0), (-1, -1))
 styles.last_cols = lambda x: Styles((-x, 0), (-1, -1))
+
+styles.grid = styles.all.Grid(1, colors.black)
