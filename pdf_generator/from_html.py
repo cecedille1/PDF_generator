@@ -14,13 +14,25 @@ from pdf_generator.medias import NoMediasLocator
 from pdf_generator.styles import Paragraph
 
 
-def html_to_rlab(text, image_locator=None):
-    image_locator = image_locator or NoMediasLocator()
-    parser = Parser(image_locator)
+def html_to_rlab(text, media_locator=None, link_handler=None):
+    if isinstance(link_handler, basestring):
+        link_handler = PrefixLinkHandler(link_handler)
+
+    parser = Parser(media_locator or NoMediasLocator(), link_handler)
     parser.feed(text)
     return parser.get_result()
 
 # pop, call fn and add result
+
+
+class PrefixLinkHandler(object):
+    def __init__(self, prefix):
+        self.prefix = prefix.rstrip('/')
+
+    def __call__(self, url):
+        if not url.startswith('/'):
+            url = '/' + url
+        return self.prefix + url
 
 
 def end_block(fn):
@@ -44,7 +56,7 @@ class Parser(HTMLParser):
 
         self.new_para()
         self.stack[-1].append(
-            Image(self.image_locator(attr['src']), height=height, width=width))
+            Image(self.media_locator(attr['src']), height=height, width=width))
 
     @end_block
     def block_end(item):
@@ -62,8 +74,10 @@ class Parser(HTMLParser):
 
     def on_a_start(self, attrs):
         attr = dict(attrs)
-        self.add_buffer(
-            '<link href="http://www.musiboxlive.com%s">' % attr['href'])
+        href = attr['href']
+        if self.link_handler:
+            href = self.link_handler(href)
+        self.add_buffer(u'<link href="{0}">'.format(href))
 
     def on_a_end(self):
         self.add_buffer('</link>')
@@ -98,9 +112,10 @@ class Parser(HTMLParser):
         'img': on_img,
     }
 
-    def __init__(self, image_locator):
+    def __init__(self, media_locator, link_handler):
         HTMLParser.__init__(self)
-        self.image_locator = image_locator
+        self.media_locator = media_locator
+        self.link_handler = link_handler
         self.new_buffer()
         self.stack = deque()
         self.stack.append([])
