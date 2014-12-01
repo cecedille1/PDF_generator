@@ -34,11 +34,46 @@ class Fraction(object):
 
 
 class BaseTemplate(object):
-    def __init__(self, pagesize=None, margins=None):
+    def __init__(self, pagesize=None, margins=None, page_end=None, header=None, footer=None):
         self.width, self.height = pagesize or pagesizes.A4
         margins = margins or (36, 36, 18)
         self._mtop, self._mright, self._mbottom, self._mleft = self.explode(margins)
+
+        self.left = self._mleft
+        self.right = self.width - self._mright
+        self.top = self.height - self._mtop
+        self.bottom = self._mbottom
+
         self.page_templates = []
+
+        self._page_end = page_end
+        self._header = header
+        self._footer = footer
+
+    def page_end(self, canvas, doc):
+        if self._page_end:
+            canvas.saveState()
+            self._page_end(canvas, doc)
+            canvas.restoreState()
+
+        if self._footer:
+            self._write_margin(canvas, self._footer, True)
+
+        if self._header:
+            self._write_margin(canvas, self._header, False)
+
+    def _write_margin(self, canvas, p, footer=True):
+        margin = self._mbottom if footer else self._mtop
+        line_y = self.bottom if footer else self.top
+        text_y = 0 if footer else self.top
+
+        w, h = p.wrapOn(canvas, self.printable_width, margin)
+
+        canvas.saveState()
+        p.drawOn(canvas, (self.printable_width - w) / 2, text_y + (margin - h) / 2)
+        canvas.setStrokeColor(p.style.textColor)
+        canvas.line(self.left, line_y, self.right, line_y)
+        canvas.restoreState()
 
     def explode(self, margins):
         """
@@ -81,15 +116,19 @@ class BaseTemplate(object):
 
 class SimpleTemplate(BaseTemplate):
     def __call__(self, out, title, author, debug=False):
-        return SimpleDocTemplate(out, pagesize=self.pagesize,
-                                 rightMargin=self._mright,
-                                 leftMargin=self._mleft,
-                                 topMargin=self._mtop,
-                                 bottomMargin=self._mbottom,
-                                 author=author,
-                                 title=title,
-                                 showBoundary=debug,
-                                 )
+        template = SimpleDocTemplate(out,
+                                     pagesize=self.pagesize,
+                                     rightMargin=self._mright,
+                                     leftMargin=self._mleft,
+                                     topMargin=self._mtop,
+                                     bottomMargin=self._mbottom,
+                                     author=author,
+                                     title=title,
+                                     showBoundary=debug,
+                                     )
+        template.onFirstPage = self.page_end
+        template.onLaterPages = self.page_end
+        return template
 
 
 class TemplateRows(object):
@@ -177,15 +216,6 @@ class TemplateRow(object):
 
 
 class Template(BaseTemplate):
-    def __init__(self, pagesize=None, margins=None, pageEnd=None):
-        super(Template, self).__init__(pagesize, margins)
-
-        self.pageEnd = pageEnd
-        self.left = self._mleft
-        self.right = self.width - self._mright
-        self.top = self.height - self._mtop
-        self.bottom = self._mbottom
-
     def _resolve_dim(self, dim, ref):
         if dim is None:
             return ref
@@ -232,9 +262,7 @@ class Template(BaseTemplate):
         id = id or '_page-{0}'.format(len(self.page_templates))
 
         frames = [self._get_frame(*frame_def, padding=padding) for frame_def in frame_defs]
-        pt = PageTemplate(id, frames)
-        if self.pageEnd is not None:
-            pt.onPageEnd = self.pageEnd
+        pt = PageTemplate(id, frames, onPageEnd=self.page_end)
 
         self.page_templates.append(pt)
         return pt
