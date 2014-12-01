@@ -24,6 +24,20 @@ def Paragraph(text, style=snormal, **kw):
     return BaseParagraph(text, style)
 
 
+def bold(string, *args, **kw):
+    """
+    Return string as a :class:`Paragraph` in bold
+    """
+    return Paragraph(u'<b>{}</b>'.format(string), *args, **kw)
+
+
+def italic(string, *args, **kw):
+    """
+    Return string as a :class:`Paragraph` in italic
+    """
+    return Paragraph(u'<i>{}</i>'.format(string), *args, **kw)
+
+
 def HSpacer(width):
     return Spacer(0, width)
 
