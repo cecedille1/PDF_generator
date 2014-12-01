@@ -6,25 +6,27 @@ from __future__ import absolute_import
 import collections
 
 from reportlab.lib import colors
-from reportlab.platypus import Table, LongTable, TableStyle, Paragraph as ParagraphClass
+from reportlab.platypus import (
+    Table,
+    LongTable,
+    TableStyle,
+    Paragraph as ParagraphClass
+)
 
 
-def make_para_row(texts):
-    for text in texts:
-        if not isinstance(text, (ParagraphClass, basestring)):
-            text = unicode(text)
-        yield text
-
-
-def make_para_array(rows):
-    return map(make_para_row, rows)
 
 
 class TableGenerator(collections.MutableSequence):
 
     def __init__(self, size=None):
-        self.size = size
+        self._size = size
         self.content = list()
+
+    @property
+    def size(self):
+        if self._size:
+            return self._size
+        return max(len(x) for x in self)
 
     def __len__(self):
         return len(self.content)
