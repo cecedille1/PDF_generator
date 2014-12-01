@@ -1,6 +1,73 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+Tables
+======
+
+The table generation process use a :class:`TableGenerator` to gather all the
+cells of the table. The methods :meth:`TableGenerator.get_table` and
+:meth:`TableGenerator.get_long_table` returns the flowable objects to add to
+the story.
+
+Those methods take a list of styles, used to create a
+:class:`reportlab.platypus.TableStyle` object for the table. Those styles are
+are tuples as defined by :mod:`reportlab`.
+
+The :class:`Styles` objects and its default instantiation :data:`styles` are
+shortcut to :mod:`reportlab` table styles in a less obnoxious interface.
+
+Example:
+
+>>> gen = TableGenerator()
+>>> gen.append([
+...     'Column 1',
+...     'Column 2',
+... ])
+>>> gen.extend(datas)
+>>> story.append(gen.get_long_table(
+...     styles.first_row.TextColor(colors.red),
+...     styles.first_col.Alignment('RIGHT'),
+... ))
+
+.. data:: styles
+
+    A shortcut to create :mod:`reportlab` table styles. All attributes of
+    styles objects correspond to table styles directive and the arguments are
+    the parameters of thoses table styles.
+
+    Arguments are concatenated and may be applied before or after setting the
+    directive name.
+
+    Those 4 directives are equivalent:
+
+    >>> styles((-1, 0), (-1, -1), 1, colors.black).Grid()
+    >>> styles.Grid((-1, 0), (-1, -1), 1, colors.black)
+    >>> styles((-1, 0), (-1, -1)).Grid(1, colors.Black)
+    >>> ('GRID', (-1, 0), (-1, -1), 1, colors.black)
+
+    This allow to create predefined sections of the grid and apply different
+    styles to those sections.
+
+    The sections **first_row**, **first_col**, **last_row**, **last_col** are
+    predefined styles for respectively the first row, the first column, the
+    last row and the last column. **first_rows**, **last_rows**,
+    **first_cols**, **last_cols** are function matching the first and last columns
+    or rows up the given value.
+
+    Those 3 directives are equivalent:
+
+    >>> styles((-2, 0), (-1, -1)).Background(colors.red)
+    >>> styles.last_cols(2).Background(colors.red)
+    >>> ('BACKGROUND', (-2, 0), (-1, -1), colors.red)
+
+    The **all** attributes is a shorcut to a section for all the table.
+
+    A special **styles.grid** style is defined and mainly designed for quick
+    debugging more than intended as a production value. It defines a black grid
+    on each cell of the array.
+"""
+
 from __future__ import absolute_import
 
 import collections
@@ -14,9 +81,19 @@ from reportlab.platypus import (
 )
 
 
+__all__ = [
+    'TableGenerator',
+    'styles'
+]
 
 
 class TableGenerator(collections.MutableSequence):
+    """
+    A Generator of :class:`Table` and :class:`LongTable`.
+
+    This object is a mutable sequence and supports all the access as a list to
+    add values.
+    """
 
     def __init__(self, size=None):
         self._size = size
@@ -49,19 +126,18 @@ class TableGenerator(collections.MutableSequence):
     def add_a_line(self):
         self.append([''] * self.size)
 
-    def add_row(self, row):
-        self.append(make_para_row(row))
-
-    def add_array(self, array):
-        self.extend(make_para_array(array))
-
-    def add_header_row(self, row):
-        self.add_row(map(lambda x: '<b>%s</b>' % x, row))
-
     def get_table(self, *style, **kw):
+        """
+        Returns the table as a :class:`reportlab.platypus.Table`
+        """
         return Table(self.content, style=TableStyle(style), **kw)
 
     def get_long_table(self, *style, **kw):
+        """
+        Returns the table as a :class:`reportlab.platypus.LongTable`.
+
+        The :class:`LongTable` is recommended for bigger tables.
+        """
         return LongTable(self.content, style=TableStyle(style), **kw)
 
 

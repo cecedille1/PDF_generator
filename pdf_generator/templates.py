@@ -1,6 +1,75 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+Templates and frames
+====================
+
+The :class:`SimpleTemplate` defines a simple template with a whole page.
+
+The more advanced :class:`Template` cuts the page in frames. The template is
+build by adding pages with :meth:`Template.add_page`. The pages can be defined
+by a list of tuples of positions, width and height creating frames.
+
+The class :class:`TemplateRows` are builder objects to create easily frames.
+The defines rows and split them in cells.
+
+Example: A A4 page with 1 cm margin on all the borders and split in 5 frames::
+
+    +-----+-----+
+    | F1  | F2  |
+    +-----+-----+
+    |           |
+    +----+-+----+
+    | F3 | | F4 |
+    |    | |    |
+    +----+-+----+
+    |           |
+    |    F5     |
+    |           |
+    +-----------+
+
+>>> template = Template(pagesizes.A4, 1 * units.cm)
+
+>>> tr = TemplateRows()
+>>> tr.row(4 * units.cm).split(2)  # 4 cm split in 2 equals part F1 anf F2
+>>> tr.row(2 * units.cm)  # Empty space of 2 cm
+>>> tr.row(5 * units.cm).cell(Fraction(2/5.)).skip(Fraction(1/5.)).cell()
+>>> # 5 cm split in 2 sections, of 2/5 of the page separated by an empty space F3 and F4
+>>> tr.row().cell() # The rest F5
+>>> template.add_page(tr)
+
+The switch from a frame to the next is triggered either when the frame is full
+or when a :class:`FrameBreak` special flowable is inserted to the story. The
+:class:`Story` has the shortcut method: `meth:Story.next_frame`.
+
+Callbacks
+---------
+
+Templates have a set of callbacks, that are specified at the instantiation of
+the :class:`SimpleTemplate` or :class:`Template`. There is a general purpose
+**page_end** which is called after each page have been rendered. There are
+**header** and **footer**. If they are specified, they are a
+:class:`Paragraph` object and they are written in the margin of each page.
+Headers are written in the top margin and footers are written in the bottom
+margin. A line is also added between the header or footer and the rest of the
+page.
+
+
+>>> t = SimpleTemplate(margins=(50, 10),
+...               header=Paragraph('header header header',
+...                                textColor=colors.red,
+...                                fontSize=8,
+...                                alignment=enums.TA_CENTER,
+...                                ),
+...               footer=Paragraph('footer footer footer',
+...                                textColor=colors.blue,
+...                                fontSize=8,
+...                                alignment=enums.TA_CENTER,
+...                                ),
+...               )
+"""
+
 from reportlab.platypus import (
     Frame,
     BaseDocTemplate,
@@ -9,8 +78,20 @@ from reportlab.platypus import (
 )
 from reportlab.lib import pagesizes
 
+__all__ = [
+    'BaseTemplate',
+    'SimpleTemplate',
+    'Template',
+    'Fraction',
+    'TemplateRows',
+    'TemplateRow',
+]
+
 
 class Fraction(object):
+    """
+    Fraction of *ratio*.
+    """
     def __init__(self, ratio):
         self._ratio = ratio
 
@@ -100,10 +181,16 @@ class BaseTemplate(object):
 
     @property
     def printable_width(self):
+        """
+        The width of the printable area, excluding the margins
+        """
         return self.width - self._mleft - self._mright
 
     @property
     def printable_height(self):
+        """
+        The height of the printable area, excluding the margins
+        """
         return self.height - self._mtop - self._mbottom
 
     @property
@@ -115,6 +202,9 @@ class BaseTemplate(object):
 
 
 class SimpleTemplate(BaseTemplate):
+    """
+    The simplest template, a page of *pagesize* with margin *margins*.
+    """
     def __call__(self, out, title, author, debug=False):
         template = SimpleDocTemplate(out,
                                      pagesize=self.pagesize,
@@ -132,15 +222,40 @@ class SimpleTemplate(BaseTemplate):
 
 
 class TemplateRows(object):
+    """
+    A builder of templates, row by row.
+
+    :class:`TemplateRows` are stateful and spaces are allocated with :meth:`row`
+    and `skip` from the top to the bottom.
+
+    Each row does not overlap with row under or over it. All the cells of a row
+    have the same height.
+
+    .. note::
+
+        The *height* arguments of :meth:`skip` and :meth:`row` are either
+        :class:`int` or :class:`float`, or :class:`Fraction` relative to the
+        :attr:`printable_height` of the template. The usage of each of the method
+        must be consistent in all the rows of the :class:`TemplateRows`.
+    """
+
     def __init__(self):
         self._rows = []
         self._current_height = 0
 
     def skip(self, height):
+        """
+        Skip *height* of rows.
+        """
         self._current_height = height + self._current_height
         return self
 
     def row(self, height=None):
+        """
+        Add a row of *height* in the template and returns a :class:`TemplateRow`.
+
+        If *height* is ``None``, the whole page is used.
+        """
         if self._current_height is None:
             raise ValueError('No space remaining')
 
@@ -160,6 +275,9 @@ class TemplateRows(object):
 
 
 class TemplateRow(object):
+    """
+    A row of a :class:`TemplateRows`.
+    """
     def __init__(self, y, height):
         self.y = y
         self.height = height
@@ -171,10 +289,18 @@ class TemplateRow(object):
             yield x, self.y, width, self.height
 
     def skip(self, width):
+        """
+        Skip *width* of cell.
+        """
         self._consumed = width + self._consumed
         return self
 
     def cell(self, width=None):
+        """
+        Create a Frame at this place of *width*.
+
+        If *width* is None, the width takes all the remaining place.
+        """
         if self._consumed is None:
             raise ValueError('No space left')
 
@@ -187,14 +313,30 @@ class TemplateRow(object):
 
     def split(self, x, *args):
         """
-        split(x)
+        **split(x)**
 
-        Split the row in *x* equal parts
+        Split the row in *x* equal parts::
 
-        split(x, y, z, ...)
+            row.split(2)
 
-        Split the row in as many parts as arguments, weighed by each value.
-        Ex split(2, 3, 2, 1) creates 1/3, 1/2, 1/3, 1/6.
+            +------+------+
+            |  F1  |  F2  |
+            +------+------+
+
+        **split(x, y, z, ...)**
+
+        Split the row in as many parts as arguments, weighed by each value::
+
+            row.split(1, 3, 4, 2)
+
+            +--+------+-------+----+
+            |F1|  F2  |   F3  | F4 |
+            +--+------+-------+----+
+
+        .. note::
+
+            :meth:`split` can only split empty rows. The methods :meth:`skip`
+            or :meth:`cell` must not be called on the same row.
         """
         if self._cells:
             raise ValueError('Cannot split already divided cell')
@@ -216,6 +358,9 @@ class TemplateRow(object):
 
 
 class Template(BaseTemplate):
+    """
+    A template composed of frames.
+    """
     def _resolve_dim(self, dim, ref):
         if dim is None:
             return ref
@@ -256,6 +401,23 @@ class Template(BaseTemplate):
                      )
 
     def add_page(self, id, frame_defs=None, padding=None):
+        """
+        add_page([id,] frames_defs, padding=None)
+
+        Adds a page to the template, composed of *frames_defs*. *id* is the
+        title of the frame (referenceable by :meth:`Story.next_template`. When
+        id is falsy or not specified a id is computed of the form _page-x where
+        x is the number of the page.
+
+        *frames_defs* is a list of tuples defining a frame. Each tuple is has a
+        length of 4. The fields of the tuples are x, y, width and height. The
+        x and y fields are relative to the top left corner of page. The width
+        and height dimensension can be ``None`` meaning all the remaining of
+        the page.
+
+        Margins are enforced over the frame definitions and frames bigger than
+        the printable height or width are silentry shrunk.
+        """
         if frame_defs is None:
             frame_defs, id = id, None
 
@@ -268,6 +430,9 @@ class Template(BaseTemplate):
         return pt
 
     def add_whole_page(self, id=None, padding=None):
+        """
+        Add a page with a single frame taking the whole space.
+        """
         self.add_page(id, [(0, 0, None, None)], padding)
 
     def __call__(self, out, title, author, debug=False):

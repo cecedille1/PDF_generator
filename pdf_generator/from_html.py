@@ -1,6 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+HTML
+====
+
+Transforms HTML in PDF templates.
+
+>>> html_to_rlab('<h1>Title</h1><p><img src="lion.png" /></p>',
+...              PathMediasLocator('/var/www/medias'))
+
+
+The supported tags are: h1-h6, p, center, blockquote, a, br, ul, li
+"""
+
 from __future__ import absolute_import
 
 from StringIO import StringIO
@@ -13,8 +26,30 @@ from reportlab.lib import enums
 from pdf_generator.medias import NoMediasLocator
 from pdf_generator.styles import Paragraph
 
+__all__ = [
+    'html_to_rlab'
+]
+
 
 def html_to_rlab(text, media_locator=None, link_handler=None):
+    """
+    Transforms text from html string to a list of flowables.
+
+    The medias (from the img tags) are located by the media_locator. By default
+    an instance of :class:`pdf_generator.medias.NoMediasLocator` is used that
+    raises if a media is required.
+
+    The url (from the a tags) of the links are transformed by the *link_handler*.
+    The *link_handler* can be a callable, then its called with the raw href of
+    the a tag and must return the url to use in the link. The *link_handler*
+    can also be a string, and then is used as a prefix for the links.
+
+    Examples:
+
+    >>> html_to_rlab('<a href="/index.html">Index</a>', link_handler='http://example.com')
+    Paragraph('<link href="http://example.com/index.html">Index</link>')
+    """
+
     if isinstance(link_handler, basestring):
         link_handler = PrefixLinkHandler(link_handler)
 
