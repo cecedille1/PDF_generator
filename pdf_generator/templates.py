@@ -38,6 +38,7 @@ class BaseTemplate(object):
         self.width, self.height = pagesize or pagesizes.A4
         margins = margins or (36, 36, 18)
         self._mtop, self._mright, self._mbottom, self._mleft = self.explode(margins)
+        self.page_templates = []
 
     def explode(self, margins):
         """
@@ -159,6 +160,8 @@ class TemplateRow(object):
         if self._cells:
             raise ValueError('Cannot split already divided cell')
 
+        self._consumed = None
+
         if not args:
             args = [1] * x
         else:
@@ -176,7 +179,6 @@ class TemplateRow(object):
 class Template(BaseTemplate):
     def __init__(self, pagesize=None, margins=None, pageEnd=None):
         super(Template, self).__init__(pagesize, margins)
-        self.page_templates = []
 
         self.pageEnd = pageEnd
         self.left = self._mleft
@@ -194,7 +196,7 @@ class Template(BaseTemplate):
 
         raise ValueError()
 
-    def get_frame(self, x, y, width=None, height=None, padding=None):
+    def _get_frame(self, x, y, width, height, padding=None):
         # Invert the coordinates, from bottom left to top left
         width = self._resolve_dim(width, self.printable_width)
         height = self._resolve_dim(height, self.printable_height)
@@ -229,7 +231,7 @@ class Template(BaseTemplate):
 
         id = id or '_page-{0}'.format(len(self.page_templates))
 
-        frames = [self.get_frame(*frame_def, padding=padding) for frame_def in frame_defs]
+        frames = [self._get_frame(*frame_def, padding=padding) for frame_def in frame_defs]
         pt = PageTemplate(id, frames)
         if self.pageEnd is not None:
             pt.onPageEnd = self.pageEnd
@@ -238,7 +240,7 @@ class Template(BaseTemplate):
         return pt
 
     def add_whole_page(self, id=None, padding=None):
-        self.add_page(id, [(0, 0)], padding)
+        self.add_page(id, [(0, 0, None, None)], padding)
 
     def __call__(self, out, title, author, debug=False):
         return BaseDocTemplate(
