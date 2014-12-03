@@ -404,15 +404,15 @@ as the callable. By default the string is ``{}/{}`` for example printing 1/2,
 2/2 for a 2 pages document.
 
 >>> story = Story(SimpleTemplate())
->>> for x in 'ABC',
+>>> for x in 'ABC':
 ...     s.append(Paragraph(x))
 ...     s.next_page()
 >>> story.build(out,
-                     title=u'PDF with page number',
-                     author=u'Enix PDF Generator',
-                     canvasmaker=NumberedCanvasFactory(-1 * units.cm, 1.5 * units.cm,
-                     lambda x, y: 'last' if x == y else str(x),
-                     )
+...                  title=u'PDF with page number',
+...                  author=u'Enix PDF Generator',
+...                 canvasmaker=NumberedCanvasFactory(-1 * units.cm, 1.5 * units.cm,
+...                 lambda x, y: 'last' if x == y else str(x),
+...                 )
 
 Result::
 
