@@ -18,7 +18,7 @@ Writing a Hello world PDF:
 
 from __future__ import absolute_import
 
-__version__ = '0.4.4'
+__version__ = '0.4.5'
 
 __all__ = [
     'Story',
