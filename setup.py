@@ -46,7 +46,7 @@ build_info = dict(
     version=find_version('pdf_generator/__init__.py'),
     description='PDF Generation utils',
     long_description=readme,
-    author='Grégoire ROCHER',
+    author=u'Grégoire ROCHER',
     author_email='gr@enix.org',
     packages=[
         'pdf_generator',
