@@ -98,6 +98,9 @@ class Fraction(object):
     def __mul__(self, x):
         return x * self._ratio
 
+    def __radd__(self, other):
+        return self.__add__(other)
+
     def __add__(self, x):
         if x == 0:
             return self
@@ -105,12 +108,15 @@ class Fraction(object):
             raise ValueError('Can only add a fraction to a fraction')
         return Fraction(x._ratio + self._ratio)
 
+    def __eq__(self, other):
+        return isinstance(other, Fraction) and self._ratio == other._ratio
+
     def __repr__(self):
         if self._ratio == 0:
             return '0/0'
         for x in xrange(2, 20):
             if self._ratio * x % 1 == 0.0:
-                return '{0} / {1}'.format(int(self._ratio * x), x)
+                return '{0}/{1}'.format(int(self._ratio * x), x)
         return str(self._ratio)
 
 
@@ -144,9 +150,11 @@ class BaseTemplate(object):
             self._write_margin(canvas, self._header, False)
 
     def _write_margin(self, canvas, p, footer=True):
-        margin = self._mbottom if footer else self._mtop
-        line_y = self.bottom if footer else self.top
-        text_y = 0 if footer else self.top
+        margin, line_y, text_y = (
+            (self._mbottom, self.bottom, 0)
+            if footer else
+            (self._mtop, self.top, self.top)
+        )
 
         w, h = p.wrapOn(canvas, self.printable_width, margin)
 
@@ -433,7 +441,7 @@ class Template(BaseTemplate):
         """
         Add a page with a single frame taking the whole space.
         """
-        self.add_page(id, [(0, 0, None, None)], padding)
+        return self.add_page(id, [(0, 0, None, None)], padding)
 
     def __call__(self, out, title, author, debug=False):
         return BaseDocTemplate(
