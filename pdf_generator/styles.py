@@ -67,13 +67,21 @@ class Paragraph(BaseParagraph):
 
     def __eq__(self, other):
         return (isinstance(other, BaseParagraph) and
-                self.text == other.text and
-                self.style is other.style or (
-                    self.style.__dict__ == other.style.__dict__
-                    ))
+                self.text == other.text and self._same_style(other))
+
+    def _same_style(self, other):
+        if self.style is other.style:
+            return True
+
+        style, other = self.style.__dict__, other.style.__dict__
+        return all(style[k] == other[k]
+                   for k in style if k != 'name' and k != 'parent')
 
     def __repr__(self):
         return 'P({})'.format(self.text[:40].encode('ascii', 'ignore'))
+
+    def __nonzero__(self):
+        return bool(self.text.strip())
 
 
 def bold(string, *args, **kw):
