@@ -151,6 +151,9 @@ class Styles(object):
 
         'background': 3,
         'valign': 3,
+        'textcolor': 3,
+
+        'span': 2,
     }
 
     def __init__(self, *args):
