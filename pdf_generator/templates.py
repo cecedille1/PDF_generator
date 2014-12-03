@@ -182,7 +182,7 @@ class BaseTemplate(object):
             mtop, mright, mbottom = margins
             mleft = mright
         elif len(margins) == 4:
-            mtop, mright, mbottom, mleft = margins[0]
+            mtop, mright, mbottom, mleft = margins
         else:
             raise ValueError('Bad values for margins')
         return mtop, mright, mbottom, mleft
