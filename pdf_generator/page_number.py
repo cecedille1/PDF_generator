@@ -13,10 +13,10 @@ This examples prints the page number as "1/2" and "2/2" in the top right corner:
 >>> story = Story(SimpleTemplate())
 >>> story.append(two_pages_of_text)
 >>> story.build(out,
-                     title=u'PDF with page number',
-                     author=u'Enix PDF Generator',
-                     canvasmaker=NumberedCanvasFactory(-1 * units.cm, 1.5 * units.cm, '{0}/{1}'),
-                     )
+...                  title=u'PDF with page number',
+...                  author=u'Enix PDF Generator',
+...                  canvasmaker=NumberedCanvasFactory(-1 * units.cm, 1.5 * units.cm, '{0}/{1}'),
+...                  )
 
 """
 
