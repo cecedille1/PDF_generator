@@ -20,10 +20,16 @@ from StringIO import StringIO
 from HTMLParser import HTMLParser
 from collections import deque
 
-from reportlab.platypus import Image, Table
+from reportlab.platypus import (
+    Image,
+    Table,
+    XBox,
+    TableStyle,
+)
 from reportlab.lib import enums
+from reportlab.lib.styles import ParagraphStyle
 
-from pdf_generator.medias import NoMediasLocator
+from pdf_generator.medias import NoMediasLocator, PLACEHOLDER
 from pdf_generator.styles import Paragraph
 
 __all__ = [
@@ -55,7 +61,8 @@ def html_to_rlab(text, media_locator=None, link_handler=None):
 
     parser = Parser(media_locator or NoMediasLocator(), link_handler)
     parser.feed(text)
-    return parser.get_result()
+    content = [[x] for x in parser.get_result()]
+    return Table(content)
 
 # pop, call fn and add result
 
@@ -70,128 +77,190 @@ class PrefixLinkHandler(object):
         return self.prefix + url
 
 
-def end_block(fn):
-    def cb(self):
-        self.new_para()
-        item = fn(self.stack.pop())
-        self.stack[-1].append(item)
-    return cb
+class Rules(object):
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+    def __contains__(self, value):
+        return hasattr(self, value)
+
+
+class StartEndRules(Rules):
+    def __init__(self, media_locator, link_handler):
+        self.media_locator = media_locator
+        self.link_handler = link_handler
+
+    def img(self, tag, attrs):
+        attrs = dict(attrs)
+
+        width = None
+        if 'width' in attrs:
+            width = int(attrs['width'])
+
+        height = None
+        if 'height' in attrs:
+            height = int(attrs['height'])
+
+        src = self.media_locator(attrs['src'])
+        if src is PLACEHOLDER:
+            return XBox(height=height or 40, width=width or 40, text=attrs['src'])
+
+        return Image(src, height=height, width=width)
+
+    def br(self, tag, attrs):
+        return '<br />'
+
+
+class StartRules(StartEndRules):
+    def next(self, tag, attrs):
+        return None
+
+    p = ul = li = blockquote = center = h1 = h2 = h3 = h4 = h5 = h6 = next
+
+    def a(self, tag, attrs):
+        attr = dict(attrs)
+        href = attr['href']
+
+        if self.link_handler:
+            href = self.link_handler(href)
+
+        return u'<link href="{0}">'.format(href)
+
+    def strong(self, tag, attr):
+        return '<b>'
+
+    def em(self, tag, attr):
+        return '<i>'
+
+
+class EndRules(Rules):
+    def a(self, tag, value, stack):
+        return '</link>'
+
+    def h6(self, tag, value, stack):
+        return Paragraph(value, tag)
+
+    h1 = h2 = h3 = h4 = h5 = h6
+
+    def _center(self, values):
+        for x in values:
+            if isinstance(x, Paragraph):
+                x.style = ParagraphStyle('center', parent=x.style, alignment=enums.TA_CENTER)
+            elif isinstance(x, Image):
+                x.hAlign = 'CENTER'
+            elif isinstance(x, list):
+                self._center(x)
+        return values
+
+    def center(self, tag, value, stack):
+        if value.strip():
+            stack.append(Paragraph(value))
+        return Table([[x] for x in self._center(stack)],
+                     style=TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER')]))
+
+    def stacked(self, tag, value, stack):
+        if value.strip():
+            stack.append(Paragraph(value))
+        return stack
+
+    ul = blockquote = stacked
+
+    def li(self, tag, value, stack):
+        if value:
+            return Paragraph(value, bulletText='-')
+
+    def p(self, tag, value, stack):
+        if value.strip():
+            return Paragraph(value)
+
+    def strong(self, tag, value, stack):
+        return '</b>'
+
+    def em(self, tag, value, stack):
+        return '</i>'
 
 
 class Parser(HTMLParser):
-
-    def on_img(self, attrs):
-        attr = dict(attrs)
-        width = None
-        if 'width' in attrs:
-            width = int(attrs['width']) / 10
-        height = None
-        if 'height' in attrs:
-            height = int(attrs['height']) / 10
-
-        self.new_para()
-        self.stack[-1].append(
-            Image(self.media_locator(attr['src']), height=height, width=width))
-
-    @end_block
-    def block_end(item):
-        # map to make a column and not a row
-        return Table(map(lambda x: [x], item))
-
-    @end_block
-    def on_center_end(item):
-        return Table(map(lambda x: [x], item), hAlign=enums.TA_CENTER)
-
-    def on_li_end(self):
-        para = self.clean_buffer()
-        para.bulletText = '-'
-        self.stack[-1].append(para)
-
-    def on_a_start(self, attrs):
-        attr = dict(attrs)
-        href = attr['href']
-        if self.link_handler:
-            href = self.link_handler(href)
-        self.add_buffer(u'<link href="{0}">'.format(href))
-
-    def on_a_end(self):
-        self.add_buffer('</link>')
-
-    def block_start(self, x=None):
-        self.new_para()
-        self.stack.append([])
-
-    def ignore(self, x=None):
-        pass
-
-    def add_br(self, attr):
-        self.add_buffer('<br />')
-
-    handlers_start = {
-        'a': on_a_start,
-        'center': block_start,
-        'blockquote': block_start,
-        'ul': block_start,
-        'li': ignore,
-        'br': add_br,
-        'img': on_img
-    }
-    handlers_end = {
-        'a': on_a_end,
-        'center': on_center_end,
-        'blockquote': block_end,
-        'ul': block_end,
-        'li': on_li_end
-    }
-    handlers_startend = {
-        'img': on_img,
-    }
-
     def __init__(self, media_locator, link_handler):
         HTMLParser.__init__(self)
-        self.media_locator = media_locator
-        self.link_handler = link_handler
+        self.handlers_start = StartRules(media_locator, link_handler)
+        self.handlers_startend = StartEndRules(media_locator, link_handler)
+        self.handlers_end = EndRules()
+
         self.new_buffer()
         self.stack = deque()
         self.stack.append([])
 
     def handle_starttag(self, tag, attrs):
         if tag in self.handlers_start:
-            self.handlers_start[tag](self, attrs)
+            value = self.handlers_start[tag](tag, attrs)
+            if isinstance(value, basestring):
+                self.add_buffer(value)
+            elif value is None:
+                self.push_buffer()
+                self.stack.append([])
+            else:
+                self.push_buffer()
+                self.stack.append(value)
         else:
             self.add_buffer(self.get_starttag_text())
 
     def handle_startendtag(self, tag, attrs):
         if tag in self.handlers_startend:
-            self.handlers_startend[tag](self, attrs)
+            value = self.handlers_startend[tag](tag, attrs)
+            if isinstance(value, basestring):
+                self.add_buffer(value)
+            elif value is None:
+                self.stack[-1].append(self.clean_buffer())
+            else:
+                self.push_buffer()
+                self.stack[-1].append(value)
         else:
             self.add_buffer(self.get_starttag_text())
 
     def handle_endtag(self, tag):
         if tag in self.handlers_end:
-            self.handlers_end[tag](self)
+            stack = self.stack.pop()
+            buffer = self.clean_buffer()
+            value = self.handlers_end[tag](tag, buffer, stack)
+
+            if isinstance(value, basestring):
+                self.add_buffer(buffer)
+                self.add_buffer(value)
+                self.stack.append(stack)
+            elif isinstance(value, Paragraph) or value is None:
+                if len(stack) == 1 and not value:
+                    self.stack[-1].append(stack[0])
+                elif not stack and value:
+                    self.stack[-1].append(value)
+                elif value:
+                    stack.append(value)
+                    self.stack.append(stack)
+            else:
+                self.stack[-1].append(value)
+
         else:
             self.add_buffer('</%s>' % tag)
 
     def handle_data(self, data):
         self.add_buffer(data)
 
-    def new_para(self):
-        p = self.clean_buffer()
-        if p is not None:
-            self.stack[-1].append(p)
-
     def add_buffer(self, text):
         self.buff_clean = False
         self.buff.write(text)
 
-    def clean_buffer(self):
-        if not self.buff_clean:
-            text = self.buff.getvalue()
-            self.buff.close()
-            self.new_buffer()
-            return Paragraph(text)
-        return None
+    def push_buffer(self):
+        content = self.clean_buffer()
+        if content.strip():
+            self.stack[-1].append(Paragraph(content))
+
+    def clean_buffer(self, *args, **kw):
+        if self.buff_clean:
+            return ''
+
+        text = self.buff.getvalue()
+        self.new_buffer()
+        return text
 
     def new_buffer(self):
         self.buff_clean = True
@@ -199,7 +268,5 @@ class Parser(HTMLParser):
 
     def get_result(self):
         # empty last buffer
-        self.new_para()
-        if len(self.stack) == 1:
-            return self.stack.pop()
-        return Table(self.stack)
+        self.push_buffer()
+        return self.stack.pop()
