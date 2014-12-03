@@ -4,11 +4,21 @@
 """
 Medias locator
 ==============
+
+Medias locator returns a path on the file system from the *src* of an img tag.
+
+.. data:: PLACEHOLDER
+
+    A special object that indicates to the renderer to use a placeholder
+    instead of a media.
 """
 
 from __future__ import absolute_import
 
 import os.path
+
+
+PLACEHOLDER = object()
 
 
 class PathMediasLocator(object):
@@ -29,3 +39,12 @@ class NoMediasLocator(object):
     """
     def __call__(self, path):
         raise RuntimeError('No media path')
+
+
+class DebugMediasLocator(object):
+    """
+    Return :data:`PLACEHOLDER`
+    """
+
+    def __call__(self, path):
+        return PLACEHOLDER
