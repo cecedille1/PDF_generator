@@ -24,7 +24,7 @@ styles = getSampleStyleSheet()
 snormal = ParagraphStyle('normal')
 
 
-def Paragraph(text, style=snormal, **kw):
+class Paragraph(BaseParagraph):
     """
     A :class:`reportlab.platypus.Paragraph` shortcut.
 
@@ -57,12 +57,23 @@ def Paragraph(text, style=snormal, **kw):
 
     >>> Paragraph(text, 'h2', color=colors.red)
     """
-    if isinstance(style, basestring):
-        style = styles[style]
+    def __init__(self, text, style=snormal, **kw):
+        if isinstance(style, basestring):
+            style = styles[style]
 
-    if kw:
-        style = ParagraphStyle('style', parent=style, **kw)
-    return BaseParagraph(text, style)
+        if kw:
+            style = ParagraphStyle('style', parent=style, **kw)
+        BaseParagraph.__init__(self, text, style)
+
+    def __eq__(self, other):
+        return (isinstance(other, BaseParagraph) and
+                self.text == other.text and
+                self.style is other.style or (
+                    self.style.__dict__ == other.style.__dict__
+                    ))
+
+    def __repr__(self):
+        return 'P({})'.format(self.text[:40].encode('ascii', 'ignore'))
 
 
 def bold(string, *args, **kw):
