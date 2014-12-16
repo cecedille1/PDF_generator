@@ -68,8 +68,6 @@ class TestBaseTemplatePageEnd(unittest.TestCase):
         +-------------+
         """
 
-        self.header = mock.Mock(Paragraph, style=mock.Mock(textColor='blue'))
-        self.header.wrapOn.side_effect = lambda c, w, h: (w, h)
         self.kw = {}
 
     def bt(self):
@@ -86,28 +84,33 @@ class TestBaseTemplatePageEnd(unittest.TestCase):
         self.assertEqual(self.bt().printable_width, 140)
 
     def test_header(self):
+        self.kw['header'] = header = mock.Mock(Paragraph, style=mock.Mock(
+            borderColor='red',
+            textColor='blue'))
+        header.wrapOn.side_effect = lambda c, w, h: (w, h)
+
         canvas = mock.Mock()
-        self.kw['header'] = self.header
         self.bt().page_end(canvas, mock.Mock())
 
         canvas.assert_has_calls([
             mock.call.setStrokeColor('blue'),
+            mock.call.setStrokeColor('red'),
             mock.call.line(40, 290, 180, 290),
         ])
-        self.header.drawOn.assert_called_once_with(
+        header.drawOn.assert_called_once_with(
             canvas, 0, 290
         )
 
     def test_footer(self):
         canvas = mock.Mock()
-        self.kw['footer'] = self.header
+        self.kw['footer'] = footer = mock.Mock(Paragraph, style=mock.Mock(borderColor=None, textColor='blue'))
+        footer.wrapOn.side_effect = lambda c, w, h: (w, h)
+
         self.bt().page_end(canvas, mock.Mock())
 
-        canvas.assert_has_calls([
-            mock.call.setStrokeColor('blue'),
-            mock.call.line(40, 30, 180, 30),
-        ])
-        self.header.drawOn.assert_called_once_with(
+        self.assertFalse(canvas.line.called)
+        canvas.setStrokeColor.assert_called_once_with('blue')
+        footer.drawOn.assert_called_once_with(
             canvas, 0, 0
         )
 

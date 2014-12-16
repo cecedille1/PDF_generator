@@ -52,22 +52,37 @@ the :class:`SimpleTemplate` or :class:`Template`. There is a general purpose
 **header** and **footer**. If they are specified, they are a
 :class:`Paragraph` object and they are written in the margin of each page.
 Headers are written in the top margin and footers are written in the bottom
-margin. A line is also added between the header or footer and the rest of the
-page.
+margin.
+
+If a borderColor style is set, a line is also added between the header or
+the footer and the rest of the page.
 
 
 >>> t = SimpleTemplate(margins=(50, 10),
-...               header=Paragraph('header header header',
-...                                textColor=colors.red,
+...               header=Paragraph('header header',
+...                                textColor=colors.green,
 ...                                fontSize=8,
 ...                                alignment=enums.TA_CENTER,
 ...                                ),
-...               footer=Paragraph('footer footer footer',
+...               footer=Paragraph('footer footer',
 ...                                textColor=colors.blue,
 ...                                fontSize=8,
+...                                borderColor=colors.red,
 ...                                alignment=enums.TA_CENTER,
 ...                                ),
 ...               )
+
+Results:
+    +-------------------+
+    |   header header   | < green
+    |                   |
+    |                   |
+    |                   |
+    |                   |
+    | ----------------  | < red
+    |   footer footer   | < blue
+    +-------------------+
+
 """
 
 from reportlab.platypus import (
@@ -159,9 +174,13 @@ class BaseTemplate(object):
         w, h = p.wrapOn(canvas, self.printable_width, margin)
 
         canvas.saveState()
-        p.drawOn(canvas, (self.printable_width - w) / 2, text_y + (margin - h) / 2)
         canvas.setStrokeColor(p.style.textColor)
-        canvas.line(self.left, line_y, self.right, line_y)
+        p.drawOn(canvas, (self.printable_width - w) / 2, text_y + (margin - h) / 2)
+
+        if p.style.borderColor is not None:
+            canvas.setStrokeColor(p.style.borderColor)
+            canvas.line(self.left, line_y, self.right, line_y)
+
         canvas.restoreState()
 
     def explode(self, margins):
