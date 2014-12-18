@@ -11,9 +11,6 @@ from pdf_generator.table import (
 )
 
 
-class TestTableGenerator(unittest.TestCase):
-    def setUp(self):
-
 class TestFormattedTableGenerator(unittest.TestCase):
     def setUp(self):
         self.fpg = FormattedTableGenerator([None, '05.2f'])
