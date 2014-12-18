@@ -76,13 +76,14 @@ from reportlab.lib import colors
 from reportlab.platypus import (
     Table,
     LongTable,
-    TableStyle,
-    Paragraph as ParagraphClass
+    TableStyle as RootTableStyle,
+    Paragraph as ParagraphClass,
 )
 
 
 __all__ = [
     'TableGenerator',
+    'TableStyle',
     'styles'
 ]
 
@@ -95,21 +96,21 @@ class TableGenerator(collections.MutableSequence):
     add values.
     """
 
-    def __init__(self, size=None):
-        self._size = size
+    def __init__(self, *styles, **kw):
         self.content = list()
+        style = kw.pop('style', None)
 
-    @property
-    def size(self):
-        if self._size:
-            return self._size
-        return max(len(x) for x in self)
+        if styles:
+            style = RootTableStyle(styles, parent=style)
+
+        self.base_style = style
+        self.default_kw = kw
 
     def __len__(self):
         return len(self.content)
 
     def __iter__(self):
-        return len(self.content)
+        return iter(self.content)
 
     def __setitem__(self, index, value):
         self.content[index] = value
@@ -123,14 +124,23 @@ class TableGenerator(collections.MutableSequence):
     def insert(self, index, value):
         self.content.insert(index, value)
 
-    def add_a_line(self):
-        self.append([''] * self.size)
+    def _build(self, cls, style, kw):
+        if style:
+            style = RootTableStyle(style, parent=self.base_style)
+        else:
+            style = self.base_style
+
+        keywords = dict(self.default_kw)
+        kw['style'] = style
+        keywords.update(kw)
+
+        return cls(self.content, **keywords)
 
     def get_table(self, *style, **kw):
         """
         Returns the table as a :class:`reportlab.platypus.Table`
         """
-        return Table(self.content, style=TableStyle(style), **kw)
+        return self._build(Table, style, kw)
 
     def get_long_table(self, *style, **kw):
         """
@@ -138,7 +148,44 @@ class TableGenerator(collections.MutableSequence):
 
         The :class:`LongTable` is recommended for bigger tables.
         """
-        return LongTable(self.content, style=TableStyle(style), **kw)
+        return self._build(LongTable, style, kw)
+
+
+class FormattedTableGenerator(TableGenerator):
+    """
+    :class:`TableGenerator` that formats the rows appended with format strings.
+    **formats** is a list of ``None`` or template strings. ``None`` means that
+    the values is copied as given. Template strings are format strings
+    compatible with the builtin :func:`format` function.
+
+    >>> ftg = FormattedTableGenerator([None, '.2f', '.0%'])
+    >>> ftg.append_raw(['name', 'Value', 'Rate'])
+    >>> ftg.append(['value1', 513.492, 0.03])
+    >>> ftg.append(['value2', 1016.2, 0.43])
+    >>> ftg.get_table()
+
+    Giving::
+
+        Name    | Value     | Rate
+        value1  |    513.49 |   3%
+        value2  |   1016.20 |  43%
+    """
+    def __init__(self, formats, *args, **kw):
+        super(FormattedTableGenerator, self).__init__(*args, **kw)
+        self.formats = formats
+
+    def append_raw(self, values):
+        super(FormattedTableGenerator, self).append(values)
+
+    def append(self, values):
+        formatted = [v if f is None else format(v, f)
+                     for (f, v) in zip(self.formats, values)]
+        super(FormattedTableGenerator, self).append(formatted)
+
+
+class TableStyle(RootTableStyle, object):
+    def __init__(self, *args):
+        super(TableStyle, self).__init__(args)
 
 
 class Styles(object):
