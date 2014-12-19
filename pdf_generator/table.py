@@ -129,12 +129,18 @@ class TableGenerator(collections.MutableSequence):
             style = RootTableStyle(style, parent=self.base_style)
         else:
             style = self.base_style
+        h_align = kw.pop('hAlign', None)
 
         keywords = dict(self.default_kw)
         kw['style'] = style
         keywords.update(kw)
 
-        return cls(self.content, **keywords)
+        table = cls(self.content, **keywords)
+
+        if h_align is not None:
+            table.hAlign = h_align
+
+        return table
 
     def get_table(self, *style, **kw):
         """
