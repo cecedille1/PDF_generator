@@ -58,13 +58,15 @@ class Paragraph(BaseParagraph):
 
     >>> Paragraph(text, 'h2', color=colors.red)
     """
-    def __init__(self, text, style=snormal, **kw):
+    def __init__(self, text, style=snormal, bulletText=None, frags=None, caseSensitive=1, encoding='utf8', **kw):
         if isinstance(style, six.string_types):
             style = styles[style]
 
         if kw:
             style = ParagraphStyle('style', parent=style, **kw)
-        BaseParagraph.__init__(self, text, style)
+
+        BaseParagraph.__init__(self, text, style, bulletText=bulletText, frags=frags,
+                               caseSensitive=caseSensitive, encoding=encoding)
 
     def __eq__(self, other):
         return (isinstance(other, BaseParagraph) and
