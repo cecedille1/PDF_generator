@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 
 
 from setuptools import setup
@@ -12,7 +11,7 @@ readme = open('README.rst').read()
 
 def find_version(filename):
     filepath = os.path.join(os.path.dirname(__file__), filename)
-    with open(filepath) as init:
+    with open(filepath, 'r') as init:
         for line in init:
             if line.startswith('__version__'):
                 x, version = line.split('=', 1)
@@ -24,7 +23,7 @@ def find_version(filename):
 def parse_requirements(requirements_txt):
     requirements = []
     try:
-        with open(requirements_txt, 'rb') as f:
+        with open(requirements_txt, 'r') as f:
             for line in f:
                 line = line.strip()
                 if line.startswith('#') or not line:

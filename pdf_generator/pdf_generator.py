@@ -25,6 +25,11 @@ __all__ = [
     'Story',
 ]
 
+try:
+    string_types = basestring
+except NameError:
+    string_types = str
+
 
 class Story(collections.MutableSequence):
     """
@@ -46,7 +51,7 @@ class Story(collections.MutableSequence):
         """
         Add *flowable* to the story.
         """
-        if isinstance(flowable, basestring):
+        if isinstance(flowable, string_types):
             flowable = Paragraph(flowable)
         super(Story, self).append(flowable)
 

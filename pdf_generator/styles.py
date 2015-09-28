@@ -19,6 +19,11 @@ __all__ = [
     'italic',
 ]
 
+try:
+    string_types = basestring
+except NameError:
+    string_types = str
+
 
 styles = getSampleStyleSheet()
 snormal = ParagraphStyle('normal')
@@ -58,7 +63,7 @@ class Paragraph(BaseParagraph):
     >>> Paragraph(text, 'h2', color=colors.red)
     """
     def __init__(self, text, style=snormal, **kw):
-        if isinstance(style, basestring):
+        if isinstance(style, string_types):
             style = styles[style]
 
         if kw:

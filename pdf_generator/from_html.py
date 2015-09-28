@@ -16,8 +16,14 @@ The supported tags are: h1-h6, p, center, blockquote, a, br, ul, li
 
 from __future__ import absolute_import
 
-from StringIO import StringIO
-from HTMLParser import HTMLParser
+from io import StringIO
+
+try:
+    from HTMLParser import HTMLParser
+except ImportError:
+    # python 3
+    from html.parser import HTMLParser
+
 from collections import deque
 
 from reportlab.platypus import (
@@ -35,6 +41,11 @@ from pdf_generator.styles import Paragraph
 __all__ = [
     'html_to_rlab'
 ]
+
+try:
+    string_types = basestring
+except NameError:
+    string_types = str
 
 
 def html_to_rlab(text, media_locator=None, link_handler=None):
@@ -56,7 +67,7 @@ def html_to_rlab(text, media_locator=None, link_handler=None):
     Paragraph('<link href="http://example.com/index.html">Index</link>')
     """
 
-    if isinstance(link_handler, basestring):
+    if isinstance(link_handler, string_types):
         link_handler = PrefixLinkHandler(link_handler)
 
     parser = Parser(media_locator or NoMediasLocator(), link_handler)
@@ -108,7 +119,7 @@ class StartEndRules(Rules):
         return Image(src, height=height, width=width)
 
     def br(self, tag, attrs):
-        return '<br />'
+        return u'<br />'
 
 
 class StartRules(StartEndRules):
@@ -127,15 +138,15 @@ class StartRules(StartEndRules):
         return u'<link href="{0}">'.format(href)
 
     def strong(self, tag, attr):
-        return '<b>'
+        return u'<b>'
 
     def em(self, tag, attr):
-        return '<i>'
+        return u'<i>'
 
 
 class EndRules(Rules):
     def a(self, tag, value, stack):
-        return '</link>'
+        return u'</link>'
 
     def h6(self, tag, value, stack):
         return Paragraph(value, tag)
@@ -174,10 +185,10 @@ class EndRules(Rules):
             return Paragraph(value)
 
     def strong(self, tag, value, stack):
-        return '</b>'
+        return u'</b>'
 
     def em(self, tag, value, stack):
-        return '</i>'
+        return u'</i>'
 
 
 class Parser(HTMLParser):
@@ -194,7 +205,7 @@ class Parser(HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag in self.handlers_start:
             value = self.handlers_start[tag](tag, attrs)
-            if isinstance(value, basestring):
+            if isinstance(value, string_types):
                 self.add_buffer(value)
             elif value is None:
                 self.push_buffer()
@@ -208,7 +219,7 @@ class Parser(HTMLParser):
     def handle_startendtag(self, tag, attrs):
         if tag in self.handlers_startend:
             value = self.handlers_startend[tag](tag, attrs)
-            if isinstance(value, basestring):
+            if isinstance(value, string_types):
                 self.add_buffer(value)
             elif value is None:
                 self.stack[-1].append(self.clean_buffer())
@@ -224,7 +235,7 @@ class Parser(HTMLParser):
             buffer = self.clean_buffer()
             value = self.handlers_end[tag](tag, buffer, stack)
 
-            if isinstance(value, basestring):
+            if isinstance(value, string_types):
                 self.add_buffer(buffer)
                 self.add_buffer(value)
                 self.stack.append(stack)
@@ -240,7 +251,7 @@ class Parser(HTMLParser):
                 self.stack[-1].append(value)
 
         else:
-            self.add_buffer('</%s>' % tag)
+            self.add_buffer(u'</%s>' % tag)
 
     def handle_data(self, data):
         self.add_buffer(data)
