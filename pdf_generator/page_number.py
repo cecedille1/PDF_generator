@@ -20,6 +20,7 @@ This examples prints the page number as "1/2" and "2/2" in the top right corner:
 
 """
 
+import six
 from reportlab.pdfgen.canvas import Canvas
 
 
@@ -46,7 +47,7 @@ class NumberedCanvasFactory(object):
         self._y = y
         if callable(text):
             self._text = text
-        elif isinstance(text, basestring):
+        elif isinstance(text, six.string_types):
             self._text = text.format
         else:
             raise TypeError('Unexpected value for text: {!r}'.format(text))

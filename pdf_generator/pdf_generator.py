@@ -12,6 +12,7 @@ PDF file in the given output by applying the flowables on the template.
 
 from __future__ import absolute_import
 
+import six
 import collections
 
 from reportlab.platypus import (
@@ -24,11 +25,6 @@ from pdf_generator.styles import Paragraph
 __all__ = [
     'Story',
 ]
-
-try:
-    string_types = basestring
-except NameError:
-    string_types = str
 
 
 class Story(collections.MutableSequence):
@@ -51,7 +47,7 @@ class Story(collections.MutableSequence):
         """
         Add *flowable* to the story.
         """
-        if isinstance(flowable, string_types):
+        if isinstance(flowable, six.string_types):
             flowable = Paragraph(flowable)
         super(Story, self).append(flowable)
 

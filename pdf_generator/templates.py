@@ -85,6 +85,7 @@ Results:
 
 """
 
+import six
 from reportlab.platypus import (
     Frame,
     BaseDocTemplate,
@@ -129,7 +130,7 @@ class Fraction(object):
     def __repr__(self):
         if self._ratio == 0:
             return '0/0'
-        for x in xrange(2, 20):
+        for x in six.moves.range(2, 20):
             if self._ratio * x % 1 == 0.0:
                 return '{0}/{1}'.format(int(self._ratio * x), x)
         return str(self._ratio)

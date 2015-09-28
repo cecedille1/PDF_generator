@@ -4,6 +4,7 @@
 
 from __future__ import absolute_import
 
+import six
 from reportlab.platypus import (
     Paragraph as BaseParagraph,
     Image as BaseImage,
@@ -18,11 +19,6 @@ __all__ = [
     'bold',
     'italic',
 ]
-
-try:
-    string_types = basestring
-except NameError:
-    string_types = str
 
 
 styles = getSampleStyleSheet()
@@ -63,7 +59,7 @@ class Paragraph(BaseParagraph):
     >>> Paragraph(text, 'h2', color=colors.red)
     """
     def __init__(self, text, style=snormal, **kw):
-        if isinstance(style, string_types):
+        if isinstance(style, six.string_types):
             style = styles[style]
 
         if kw:
@@ -85,8 +81,10 @@ class Paragraph(BaseParagraph):
     def __repr__(self):
         return 'P({})'.format(self.text[:40].encode('ascii', 'ignore'))
 
-    def __nonzero__(self):
+    def __bool__(self):
         return bool(self.text.strip())
+
+    __nonzero__ = __bool__
 
 
 def bold(string, *args, **kw):

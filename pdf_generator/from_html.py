@@ -16,14 +16,10 @@ The supported tags are: h1-h6, p, center, blockquote, a, br, ul, li
 
 from __future__ import absolute_import
 
+import six
+
 from io import StringIO
-
-try:
-    from HTMLParser import HTMLParser
-except ImportError:
-    # python 3
-    from html.parser import HTMLParser
-
+from six.moves.html_parser import HTMLParser
 from collections import deque
 
 from reportlab.platypus import (
@@ -41,11 +37,6 @@ from pdf_generator.styles import Paragraph
 __all__ = [
     'html_to_rlab'
 ]
-
-try:
-    string_types = basestring
-except NameError:
-    string_types = str
 
 
 def html_to_rlab(text, media_locator=None, link_handler=None):
@@ -67,7 +58,7 @@ def html_to_rlab(text, media_locator=None, link_handler=None):
     Paragraph('<link href="http://example.com/index.html">Index</link>')
     """
 
-    if isinstance(link_handler, string_types):
+    if isinstance(link_handler, six.string_types):
         link_handler = PrefixLinkHandler(link_handler)
 
     parser = Parser(media_locator or NoMediasLocator(), link_handler)
@@ -205,7 +196,7 @@ class Parser(HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag in self.handlers_start:
             value = self.handlers_start[tag](tag, attrs)
-            if isinstance(value, string_types):
+            if isinstance(value, six.string_types):
                 self.add_buffer(value)
             elif value is None:
                 self.push_buffer()
@@ -219,7 +210,7 @@ class Parser(HTMLParser):
     def handle_startendtag(self, tag, attrs):
         if tag in self.handlers_startend:
             value = self.handlers_startend[tag](tag, attrs)
-            if isinstance(value, string_types):
+            if isinstance(value, six.string_types):
                 self.add_buffer(value)
             elif value is None:
                 self.stack[-1].append(self.clean_buffer())
@@ -235,7 +226,7 @@ class Parser(HTMLParser):
             buffer = self.clean_buffer()
             value = self.handlers_end[tag](tag, buffer, stack)
 
-            if isinstance(value, string_types):
+            if isinstance(value, six.string_types):
                 self.add_buffer(buffer)
                 self.add_buffer(value)
                 self.stack.append(stack)

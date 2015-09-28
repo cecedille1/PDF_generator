@@ -77,7 +77,6 @@ from reportlab.platypus import (
     Table,
     LongTable,
     TableStyle as RootTableStyle,
-    Paragraph as ParagraphClass,
 )
 
 
