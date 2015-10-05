@@ -110,7 +110,7 @@ def HSpacer(width):
     return Spacer(0, width)
 
 
-def Image(path, width=None, height=None, ratio=None):
+def Image(path, width=None, height=None, ratio=None, hAlign='CENTER', **kw):
     """
     An image with the file at *path*.
 
@@ -123,4 +123,6 @@ def Image(path, width=None, height=None, ratio=None):
     elif height and ratio:
         width = height * ratio
 
-    return BaseImage(path, width, height)
+    image = BaseImage(path, width, height, **kw)
+    image.hAlign = hAlign
+    return image
