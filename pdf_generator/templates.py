@@ -190,17 +190,17 @@ class BaseTemplate(object):
     def get_page_end(self, page_end_fn, header, footer):
         page_end_fn = self._wraps_page_end(page_end_fn)
 
-        footer_callback = self._get_write_margin_callback(footer)
-        header_callback = self._get_write_margin_callback(header)
+        footer_callback = self._get_bottom_write_margin_callback(footer)
+        header_callback = self._get_top_write_margin_callback(header)
 
         def page_end(canvas, doc):
-            self._page_end()
-            self._header()
-            self._footer()
+            self._page_end(canvas, doc)
+            self._header(canvas, doc)
+            self._footer(canvas, doc)
 
-            page_end_fn()
-            footer_callback()
-            header_callback()
+            page_end_fn(canvas, doc)
+            footer_callback(canvas, doc)
+            header_callback(canvas, doc)
 
         return page_end
 
