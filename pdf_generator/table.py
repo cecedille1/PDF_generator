@@ -230,20 +230,56 @@ class CellsStyle(object):
         return (self.name, ) + args
 
 
-styles = Styles()
+class AllStyles(Styles):
+    @property
+    def grid(self):
+        return self.all.Grid(1, colors.black)
 
-styles.all = Styles((0, 0), (-1, -1))
+    @property
+    def all(self):
+        return self.cols(0, -1)
 
-styles.first_row = Styles((0, 0), (-1, 0))
-styles.first_rows = lambda x: Styles((0, 0), (-1, x))
+    @property
+    def first_row(self):
+        return self.rows(0, 0)
 
-styles.last_row = Styles((0, -1), (-1, -1))
-styles.last_rows = lambda x: Styles((0, -x), (-1, -1))
+    def first_rows(self, n):
+        return self.rows(0, n)
 
-styles.first_col = Styles((0, 0), (0, -1))
-styles.first_cols = lambda x: Styles((0, 0), (x, -1))
+    def row(self, n):
+        return self.rows(n, n)
 
-styles.last_col = Styles((-1, 0), (-1, -1))
-styles.last_cols = lambda x: Styles((-x, 0), (-1, -1))
+    def rows(self, first, last):
+        return Styles((0, first), (-1, last))
 
-styles.grid = styles.all.Grid(1, colors.black)
+    @property
+    def last_row(self):
+        return self.rows(-1, -1)
+
+    @property
+    def last_rows(self, n):
+        return self.rows(n, -1)
+
+    @property
+    def first_col(self):
+        return self.cols(0, 0)
+
+    def first_cols(self, n):
+        return self.cols(0, n)
+
+    def col(self, n):
+        return self.cols(n, n)
+
+    def cols(self, first, last):
+        return Styles((first, 0), (last, -1))
+
+    @property
+    def last_col(self):
+        return self.cols(-1, -1)
+
+    @property
+    def last_cols(self, n):
+        return self.cols(n, -1)
+
+
+styles = AllStyles()
