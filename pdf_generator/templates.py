@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -10,6 +9,9 @@ The :class:`SimpleTemplate` defines a simple template with a whole page.
 The more advanced :class:`Template` cuts the page in frames. The template is
 build by adding pages with :meth:`Template.add_page`. The pages can be defined
 by a list of tuples of positions, width and height creating frames.
+
+Both `SimpleTemplate` and `Template` are thread-safe and re-usable. The
+:class:`BaseDocTemplate` they produce are single use.
 
 The class :class:`TemplateRows` are builder objects to create easily frames.
 The defines rows and split them in cells.
@@ -46,13 +48,26 @@ or when a :class:`FrameBreak` special flowable is inserted to the story. The
 Callbacks
 ---------
 
-Templates have a set of callbacks, that are specified at the instantiation of
-the :class:`SimpleTemplate` or :class:`Template`. There is a general purpose
-**page_end** which is called after each page have been rendered. There are
-**header** and **footer**. If they are specified, they are a
-:class:`Paragraph` object and they are written in the margin of each page.
-Headers are written in the top margin and footers are written in the bottom
-margin.
+Templates have a set of post-processing options. There two *page_end* general
+purpose callbacks and two sets of *header* and *footer*.
+
+Page_end
+********
+
+Two callbacks can be set and are executed after each page have been rendered.
+The first one is set at the instantiation of the :class:`SimpleTemplate` or
+:class:`Template`. The other one is set at call time when the
+:class:`reportlab.platypus.BaseDocTemplate` is created.
+
+They have a general purpose and can alter the canvas.
+
+Header and footer
+*****************
+
+Header and footer are optional :class:`reportlab.platypus.Paragraph` instances
+that are written in respectively the top and bottom margins of the document. As
+for page_end, two headers can be given, one at instantiation time and one at
+the call time when the :class:`BaseDocTemplate` is created.
 
 If a borderColor style is set, a line is also added between the header or
 the footer and the rest of the page.
@@ -86,6 +101,7 @@ Results:
 """
 
 import six
+import collections
 from reportlab.platypus import (
     Frame,
     BaseDocTemplate,
@@ -102,6 +118,14 @@ __all__ = [
     'TemplateRows',
     'TemplateRow',
 ]
+
+
+PageTemplateSpec = collections.namedtuple('PageTemplateSpec', ['id', 'frames'])
+
+
+def noop(canvas, doc):
+    """Callback for page_end"""
+    pass
 
 
 class Fraction(object):
@@ -149,40 +173,60 @@ class BaseTemplate(object):
 
         self.page_templates = []
 
-        self._page_end = page_end
-        self._header = header
-        self._footer = footer
+        self._page_end = self._wraps_page_end(page_end)
+        self._header = self._get_top_write_margin_callback(header)
+        self._footer = self._get_bottom_write_margin_callback(footer)
 
-    def page_end(self, canvas, doc):
-        if self._page_end:
+    def _wraps_page_end(self, fn):
+        if fn is None:
+            return noop
+
+        def wrapped_page_end(canvas, doc):
             canvas.saveState()
-            self._page_end(canvas, doc)
+            fn(canvas, doc)
             canvas.restoreState()
+        return wrapped_page_end
 
-        if self._footer:
-            self._write_margin(canvas, self._footer, True)
+    def get_page_end(self, page_end_fn, header, footer):
+        page_end_fn = self._wraps_page_end(page_end_fn)
 
-        if self._header:
-            self._write_margin(canvas, self._header, False)
+        footer_callback = self._get_write_margin_callback(footer)
+        header_callback = self._get_write_margin_callback(header)
 
-    def _write_margin(self, canvas, p, footer=True):
-        margin, line_y, text_y = (
-            (self._mbottom, self.bottom, 0)
-            if footer else
-            (self._mtop, self.top, self.top)
-        )
+        def page_end(canvas, doc):
+            self._page_end()
+            self._header()
+            self._footer()
 
-        w, h = p.wrapOn(canvas, self.printable_width, margin)
+            page_end_fn()
+            footer_callback()
+            header_callback()
 
-        canvas.saveState()
-        canvas.setStrokeColor(p.style.textColor)
-        p.drawOn(canvas, (self.printable_width - w) / 2, text_y + (margin - h) / 2)
+        return page_end
 
-        if p.style.borderColor is not None:
-            canvas.setStrokeColor(p.style.borderColor)
-            canvas.line(self.left, line_y, self.right, line_y)
+    def _get_bottom_write_margin_callback(self, footer):
+        return self._get_write_margin_callback(self._mbottom, self.bottom, 0, footer)
 
-        canvas.restoreState()
+    def _get_top_write_margin_callback(self, header):
+        return self._get_write_margin_callback(self._mtop, self.top, self.top, header)
+
+    def _get_write_margin_callback(self, margin, line_y, text_y, p):
+        if p is None:
+            return noop
+
+        def write_margin(canvas, doc):
+            w, h = p.wrapOn(canvas, self.printable_width, margin)
+
+            canvas.saveState()
+            canvas.setStrokeColor(p.style.textColor)
+            p.drawOn(canvas, (self.printable_width - w) / 2, text_y + (margin - h) / 2)
+
+            if p.style.borderColor is not None:
+                canvas.setStrokeColor(p.style.borderColor)
+                canvas.line(self.left, line_y, self.right, line_y)
+
+            canvas.restoreState()
+        return self._wraps_page_end(write_margin)
 
     def explode(self, margins):
         """
@@ -225,7 +269,7 @@ class BaseTemplate(object):
     def pagesize(self):
         return (self.width, self.height)
 
-    def __call__(self, out, title, author):
+    def __call__(self, out, title, author, debug=False, page_end=None):
         raise NotImplementedError('This method should return a DocTemplate')
 
 
@@ -233,7 +277,8 @@ class SimpleTemplate(BaseTemplate):
     """
     The simplest template, a page of *pagesize* with margin *margins*.
     """
-    def __call__(self, out, title, author, debug=False):
+    def __call__(self, out, title, author, debug=False,
+                 page_end=None, header=None, footer=None):
         template = SimpleDocTemplate(out,
                                      pagesize=self.pagesize,
                                      rightMargin=self._mright,
@@ -244,8 +289,10 @@ class SimpleTemplate(BaseTemplate):
                                      title=title,
                                      showBoundary=debug,
                                      )
-        template.onFirstPage = self.page_end
-        template.onLaterPages = self.page_end
+
+        page_end = self.get_page_end(page_end, header, footer)
+        template.onFirstPage = page_end
+        template.onLaterPages = page_end
         return template
 
 
@@ -397,7 +444,7 @@ class Template(BaseTemplate):
         elif isinstance(dim, (int, float)):
             return dim
 
-        raise ValueError()
+        raise ValueError('Unexpected {!r}, expected None, float, int, Fraction'.format(dim))
 
     def _get_frame(self, x, y, width, height, padding=None):
         # Invert the coordinates, from bottom left to top left
@@ -452,7 +499,7 @@ class Template(BaseTemplate):
         id = id or '_page-{0}'.format(len(self.page_templates))
 
         frames = [self._get_frame(*frame_def, padding=padding) for frame_def in frame_defs]
-        pt = PageTemplate(id, frames, onPageEnd=self.page_end)
+        pt = PageTemplateSpec(id, frames)
 
         self.page_templates.append(pt)
         return pt
@@ -463,11 +510,13 @@ class Template(BaseTemplate):
         """
         return self.add_page(id, [(0, 0, None, None)], padding)
 
-    def __call__(self, out, title, author, debug=False):
+    def __call__(self, out, title, author, debug=False,
+                 page_end=None, header=None, footer=None):
+        page_end = self.get_page_end(page_end, header, footer)
         return BaseDocTemplate(
             out,
             pagesize=self.pagesize,
-            pageTemplates=self.page_templates,
+            pageTemplates=[PageTemplate(*pts, onPageEnd=page_end) for pts in self.page_templates],
             title=title,
             author=author,
             rightMargin=self._mright,

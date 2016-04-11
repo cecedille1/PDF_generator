@@ -92,7 +92,8 @@ class Story(collections.MutableSequence):
     def __delitem__(self, index):
         del self._story[index]
 
-    def build(self, out, title, author, debug=False, **kw):
+    def build(self, out, title, author, debug=False,
+              header=None, footer=None, page_end=None, **kw):
         """
         Renders the template in out.
 
@@ -100,6 +101,7 @@ class Story(collections.MutableSequence):
         are set as meta datas on the generated template. If *debug* is True,
         the outlines of the frames are printed in the PDF.
         """
-        doc = self._template(out, title, author, debug)
+        doc = self._template(out, title, author, debug,
+                             header=header, footer=footer, page_end=page_end)
         doc.build(self._story, **kw)
         return out
