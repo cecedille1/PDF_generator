@@ -89,18 +89,42 @@ class Paragraph(BaseParagraph):
     __nonzero__ = __bool__
 
 
+class RotatedParagraph(Paragraph):
+    def __init__(self, *args, **kw):
+        self.rotation = kw.pop('rotation')
+        Paragraph.__init__(self, *args, **kw)
+
+    def minWidth(self):
+        return BaseParagraph.minWidth(self) * self.rotation.cos()
+
+    def draw(self):
+        self.width -= self.height * self.rotation.sin()
+        self.canv.translate(self.height * self.rotation.sin(), 0)
+        self.canv.rotate(self.rotation)
+        Paragraph.draw(self)
+
+    def wrap(self, avail_width, avail_height):
+        cos = self.rotation.cos()
+        sin = self.rotation.sin()
+        avail_width = cos * avail_width + sin * avail_height
+        avail_height = cos * avail_height + sin * avail_width
+        return Paragraph.wrap(self, avail_width, avail_height)
+
+
 def bold(string, *args, **kw):
     """
     Return string as a :class:`Paragraph` in bold
     """
-    return Paragraph(u'<b>{}</b>'.format(string), *args, **kw)
+    cls = RotatedParagraph if kw.get('rotation') else Paragraph
+    return cls(u'<b>{}</b>'.format(string), *args, **kw)
 
 
 def italic(string, *args, **kw):
     """
     Return string as a :class:`Paragraph` in italic
     """
-    return Paragraph(u'<i>{}</i>'.format(string), *args, **kw)
+    cls = RotatedParagraph if kw.get('rotation') else Paragraph
+    return cls(u'<i>{}</i>'.format(string), *args, **kw)
 
 
 def HSpacer(width):
