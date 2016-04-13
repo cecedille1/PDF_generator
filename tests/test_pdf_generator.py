@@ -35,5 +35,6 @@ class TestStory(unittest.TestCase):
 
         out = mock.Mock()
         self.story.build(out, 'title', 'author')
-        self.template.assert_called_once_with(out, 'title', 'author', False)
+        self.template.assert_called_once_with(out, 'title', 'author', False,
+                                              header=None, page_end=None, footer=None)
         self.template.return_value.build.assert_called_once_with([p1])

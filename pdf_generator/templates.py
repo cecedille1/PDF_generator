@@ -187,7 +187,7 @@ class BaseTemplate(object):
             canvas.restoreState()
         return wrapped_page_end
 
-    def get_page_end(self, page_end_fn, header, footer):
+    def get_page_end(self, page_end_fn=None, header=None, footer=None):
         page_end_fn = self._wraps_page_end(page_end_fn)
 
         footer_callback = self._get_bottom_write_margin_callback(footer)

@@ -90,7 +90,8 @@ class TestBaseTemplatePageEnd(unittest.TestCase):
         header.wrapOn.side_effect = lambda c, w, h: (w, h)
 
         canvas = mock.Mock()
-        self.bt().page_end(canvas, mock.Mock())
+        page_end = self.bt().get_page_end()
+        page_end(canvas, mock.Mock())
 
         canvas.assert_has_calls([
             mock.call.setStrokeColor('blue'),
@@ -106,7 +107,7 @@ class TestBaseTemplatePageEnd(unittest.TestCase):
         self.kw['footer'] = footer = mock.Mock(Paragraph, style=mock.Mock(borderColor=None, textColor='blue'))
         footer.wrapOn.side_effect = lambda c, w, h: (w, h)
 
-        self.bt().page_end(canvas, mock.Mock())
+        self.bt().get_page_end()(canvas, mock.Mock())
 
         self.assertFalse(canvas.line.called)
         canvas.setStrokeColor.assert_called_once_with('blue')
