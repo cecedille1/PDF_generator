@@ -71,11 +71,11 @@ def html_to_rlab(text, media_locator=None, link_handler=None):
 
 class PrefixLinkHandler(object):
     def __init__(self, prefix):
-        self.prefix = prefix.rstrip('/')
+        self.prefix = prefix.rstrip(u'/')
 
     def __call__(self, url):
-        if not url.startswith('/'):
-            url = '/' + url
+        if not url.startswith(u'/'):
+            url = u'/' + url
         return self.prefix + url
 
 
