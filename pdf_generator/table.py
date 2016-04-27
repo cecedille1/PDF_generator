@@ -211,8 +211,18 @@ class Styles(object):
     def __init__(self, *args):
         self.args = args
 
+    def __repr__(self):
+        return 'Styles({})'.format(', '.join(repr(x) for x in self.args))
+
     def __getattr__(self, name):
         return CellsStyle(name, self.known_styles.get(name.lower()), self.args)
+
+    def __eq__(self, other):
+        if isinstance(other, Styles):
+            other = other.args
+        elif not isinstance(other, (tuple, list)):
+            return NotImplemented
+        return self.args == other
 
 
 class CellsStyle(object):
@@ -221,6 +231,9 @@ class CellsStyle(object):
         self.argc = argc
         self.args = args
 
+    def __repr__(self):
+        return '{}({})'.format(self.name.capitalize(), self.args)
+
     def __call__(self, *args):
         args = self.args + args
 
@@ -228,6 +241,11 @@ class CellsStyle(object):
             raise TypeError('{2}: Expecting {0} arguments, got {1}'.format(
                 self.argc, len(args), self.name))
         return (self.name, ) + args
+
+    def __eq__(self, other):
+        return (isinstance(other, CellsStyle) and
+                self.name == other.name and
+                self.args == other.args)
 
 
 class AllStyles(Styles):
@@ -256,9 +274,8 @@ class AllStyles(Styles):
     def last_row(self):
         return self.rows(-1, -1)
 
-    @property
     def last_rows(self, n):
-        return self.rows(n, -1)
+        return self.rows(-n, -1)
 
     @property
     def first_col(self):
@@ -277,9 +294,8 @@ class AllStyles(Styles):
     def last_col(self):
         return self.cols(-1, -1)
 
-    @property
     def last_cols(self, n):
-        return self.cols(n, -1)
+        return self.cols(-n, -1)
 
 
 styles = AllStyles()
