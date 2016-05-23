@@ -205,9 +205,11 @@ class Parser(HTMLParser):
             elif value is None:
                 self.push_buffer()
                 self.stack.append([])
-            else:
+            elif isinstance(value, list):
                 self.push_buffer()
                 self.stack.append(value)
+            else:
+                self.stack[-1].append(value)
         else:
             self.add_buffer(self.get_starttag_text())
 

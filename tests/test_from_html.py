@@ -6,6 +6,7 @@ import mock
 
 from pdf_generator import Paragraph
 from pdf_generator.from_html import Parser, table_style_center
+from reportlab import platypus
 
 
 class TestParser(unittest.TestCase):
@@ -27,6 +28,26 @@ class TestParser(unittest.TestCase):
 
     def test_paragraph_br(self):
         self.assertEqual(self.parse(u'text<br />taxt'), [Paragraph(u'text<br />taxt')])
+
+    def test_list_and_images(self):
+        text = u'<center><img width="120" height="120" src="/src/image.png" alt="image"></center>'
+
+        class MyImage(object):
+            __new__ = mock.Mock(name='Image')
+        Table = mock.Mock(spec=platypus.Table)
+
+        with mock.patch.multiple('pdf_generator.from_html', Image=MyImage, Table=Table):
+            parsed = self.parse(text)
+
+        Table.assert_called_once_with(
+            [[MyImage.__new__.return_value]],
+            style=table_style_center,
+        )
+
+        self.assertEqual(parsed, [
+            Table.return_value,
+        ])
+
 
     def test_image(self):
         self.medias.return_value = '/static/source.png'
