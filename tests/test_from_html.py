@@ -5,7 +5,7 @@ import unittest
 import mock
 
 from pdf_generator import Paragraph
-from pdf_generator.from_html import Parser
+from pdf_generator.from_html import Parser, table_style_center
 
 
 class TestParser(unittest.TestCase):
@@ -78,7 +78,7 @@ class TestParser(unittest.TestCase):
             [Paragraph('Title', 'h1', alignment=1)],
             [Paragraph('Text <i>strong</i> also', alignment=1)],
         ],
-            style=mock.ANY
+            style=table_style_center,
         )
 
     def test_ul(self):

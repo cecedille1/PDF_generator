@@ -39,6 +39,11 @@ __all__ = [
 ]
 
 
+table_style_center = TableStyle([
+    ('ALIGNMENT', (0, 0), (-1, -1), 'CENTER')
+])
+
+
 def html_to_rlab(text, media_locator=None, link_handler=None):
     """
     Transforms text from html string to a list of flowables.
@@ -157,8 +162,7 @@ class EndRules(Rules):
     def center(self, tag, value, stack):
         if value.strip():
             stack.append(Paragraph(value))
-        return Table([[x] for x in self._center(stack)],
-                     style=TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER')]))
+        return Table([[x] for x in self._center(stack)], style=table_style_center)
 
     def stacked(self, tag, value, stack):
         if value.strip():
