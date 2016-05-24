@@ -29,6 +29,9 @@ class TestParser(unittest.TestCase):
     def test_paragraph_br(self):
         self.assertEqual(self.parse(u'text<br />taxt'), [Paragraph(u'text<br />taxt')])
 
+    def test_paragraph_br_unclosed(self):
+        self.assertEqual(self.parse(u'text<br>taxt'), [Paragraph(u'text<br />taxt')])
+
     def test_list_and_images(self):
         text = u'<center><img width="120" height="120" src="/src/image.png" alt="image"></center>'
 
