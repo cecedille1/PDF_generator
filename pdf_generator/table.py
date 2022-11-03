@@ -87,7 +87,7 @@ __all__ = [
 ]
 
 
-class TableGenerator(collections.MutableSequence):
+class TableGenerator(collections.abc.MutableSequence):
     """
     A Generator of :class:`Table` and :class:`LongTable`.
 

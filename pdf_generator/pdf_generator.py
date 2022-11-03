@@ -27,7 +27,7 @@ __all__ = [
 ]
 
 
-class Story(collections.MutableSequence):
+class Story(collections.abc.MutableSequence):
     """
     A list of flowables.
 
